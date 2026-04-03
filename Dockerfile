@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY rvllm-serverless/builder/requirements.txt /tmp/requirements.txt
+COPY rvllm-runpod/builder/requirements.txt /tmp/requirements.txt
 RUN python3 -m venv /opt/venv && \
     /opt/venv/bin/python -m pip install --upgrade pip && \
     /opt/venv/bin/python -m pip install --no-cache-dir -r /tmp/requirements.txt
@@ -40,14 +40,14 @@ ENV PYTHONUNBUFFERED=1 \
     MODEL_ID=${MODEL_ID} \
     SERVED_MODEL_NAME=${MODEL_ID}
 
-COPY rvllm-serverless/builder /opt/rvllm-serverless/builder
+COPY rvllm-runpod/builder /opt/rvllm-runpod/builder
 RUN --mount=type=secret,id=HF_TOKEN,required=false \
     if [ "${BAKE_MODEL}" = "true" ] && [ -n "${MODEL_ID}" ]; then \
         export HF_TOKEN=""; \
         if [ -f /run/secrets/HF_TOKEN ]; then \
             export HF_TOKEN="$(cat /run/secrets/HF_TOKEN)"; \
         fi; \
-        python3 /opt/rvllm-serverless/builder/download_model.py \
+        python3 /opt/rvllm-runpod/builder/download_model.py \
             --model-id "${MODEL_ID}" \
             --revision "${MODEL_REVISION}" \
             --target-dir "${MODEL_DIR}"; \
@@ -55,7 +55,7 @@ RUN --mount=type=secret,id=HF_TOKEN,required=false \
 
 ENV MODEL_DIR=${MODEL_DIR}
 
-COPY rvllm-serverless/src /opt/rvllm-serverless/src
+COPY rvllm-runpod/src /opt/rvllm-runpod/src
 
-WORKDIR /opt/rvllm-serverless
-CMD ["python3", "/opt/rvllm-serverless/src/handler.py"]
+WORKDIR /opt/rvllm-runpod
+CMD ["python3", "/opt/rvllm-runpod/src/handler.py"]

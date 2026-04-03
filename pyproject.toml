@@ -1,5 +1,5 @@
 [project]
-name = "rvllm-serverless"
+name = "rvllm-runpod"
 version = "0.1.0"
 description = "RunPod Serverless wrapper for rvLLM"
 requires-python = ">=3.11"

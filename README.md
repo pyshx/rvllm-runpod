@@ -1,4 +1,4 @@
-# rvLLM Serverless for RunPod
+# rvLLM RunPod
 
 RunPod Serverless wrapper for [`rvLLM`](https://github.com/pyshx/rvllm). Launches the Rust inference server as a subprocess and proxies RunPod jobs to its OpenAI-compatible API.
 
@@ -21,14 +21,14 @@ No inference logic lives here — that stays in rvLLM.
 ### Generic Image (model downloaded at runtime)
 
 ```bash
-./scripts/build.sh --tag pyshx/rvllm-serverless:latest --push
+./scripts/build.sh --tag pyshx/rvllm-runpod:latest --push
 ```
 
 ### Baked Image (model inside the image)
 
 ```bash
 HF_TOKEN=hf_xxx ./scripts/build.sh \
-  --tag pyshx/rvllm-serverless:qwen25-7b \
+  --tag pyshx/rvllm-runpod:qwen25-7b \
   --bake-model \
   --model-id Qwen/Qwen2.5-7B-Instruct \
   --push
@@ -142,9 +142,9 @@ For direct control over the local endpoint:
 
 ```bash
 git clone https://github.com/pyshx/rvllm
-git clone https://github.com/pyshx/rvllm-serverless
+git clone https://github.com/pyshx/rvllm-runpod
 
-cd rvllm-serverless
+cd rvllm-runpod
 uv venv && uv pip install -e ".[dev]"
 ```
 
@@ -165,7 +165,7 @@ uv venv && uv pip install -e ".[dev]"
 ## Layout
 
 ```
-rvllm-serverless/
+rvllm-runpod/
 ├── .runpod/hub.json          # RunPod hub metadata
 ├── builder/
 │   ├── download_model.py     # HF model downloader for baked images

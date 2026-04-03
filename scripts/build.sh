@@ -69,14 +69,14 @@ fi
 BUILD_ROOT="$(mktemp -d)"
 trap 'rm -rf "${BUILD_ROOT}"' EXIT
 
-mkdir -p "${BUILD_ROOT}/rvllm-serverless" "${BUILD_ROOT}/rvllm"
-cp -R "${REPO_DIR}/." "${BUILD_ROOT}/rvllm-serverless/"
+mkdir -p "${BUILD_ROOT}/rvllm-runpod" "${BUILD_ROOT}/rvllm"
+cp -R "${REPO_DIR}/." "${BUILD_ROOT}/rvllm-runpod/"
 cp -R "${WORKSPACE_DIR}/rvllm/." "${BUILD_ROOT}/rvllm/"
 
 BUILD_CMD=(
   docker buildx build
   --platform "${PLATFORM}"
-  -f "${BUILD_ROOT}/rvllm-serverless/Dockerfile"
+  -f "${BUILD_ROOT}/rvllm-runpod/Dockerfile"
   -t "${TAG}"
   --build-arg "BAKE_MODEL=${BAKE_MODEL}"
   --build-arg "MODEL_ID=${MODEL_ID}"
