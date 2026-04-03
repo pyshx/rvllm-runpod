@@ -1,0 +1,10 @@
+{
+  "input": {
+    "messages": [
+      { "role": "system", "content": "Answer briefly." },
+      { "role": "user", "content": "What is rvLLM?" }
+    ],
+    "temperature": 0.2,
+    "max_tokens": 128
+  }
+}

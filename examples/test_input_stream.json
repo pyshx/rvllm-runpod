@@ -1,0 +1,9 @@
+{
+  "input": {
+    "messages": [
+      { "role": "user", "content": "Write three bullet points about Rust." }
+    ],
+    "stream": true,
+    "max_tokens": 128
+  }
+}

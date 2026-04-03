@@ -1,0 +1,7 @@
+{
+  "input": {
+    "prompt": "The Rust programming language is",
+    "max_tokens": 64,
+    "temperature": 0.5
+  }
+}

@@ -138,6 +138,36 @@ For direct control over the local endpoint:
 | `RUST_LOG` | `info` |
 | `DISABLE_TELEMETRY` | `false` |
 
+## Examples
+
+Test inputs live in `examples/`. Each covers a different job format:
+
+| File | What it tests |
+| --- | --- |
+| `test_input.json` | Chat completion (non-streaming) |
+| `test_input_stream.json` | Chat completion (streaming) |
+| `test_input_completion.json` | Text completion |
+| `test_input_models.json` | List models |
+| `test_input_explicit.json` | Explicit proxy (path + method + body) |
+
+### Test a live RunPod endpoint
+
+```bash
+RUNPOD_API_KEY=xxx ENDPOINT_ID=yyy ./examples/test_endpoint.sh          # chat
+RUNPOD_API_KEY=xxx ENDPOINT_ID=yyy ./examples/test_endpoint.sh stream   # streaming
+RUNPOD_API_KEY=xxx ENDPOINT_ID=yyy ./examples/test_endpoint.sh all      # everything
+```
+
+### Test locally (against a running rvllm)
+
+```bash
+# Terminal 1: start rvllm
+rvllm serve --model Qwen/Qwen2.5-7B-Instruct --port 8000
+
+# Terminal 2: run the handler
+MODEL_ID=Qwen/Qwen2.5-7B-Instruct ./examples/test_local.sh
+```
+
 ## Development
 
 ```bash
@@ -170,6 +200,14 @@ rvllm-runpod/
 ├── builder/
 │   ├── download_model.py     # HF model downloader for baked images
 │   └── requirements.txt
+├── examples/
+│   ├── test_input.json       # Chat completion
+│   ├── test_input_stream.json
+│   ├── test_input_completion.json
+│   ├── test_input_models.json
+│   ├── test_input_explicit.json
+│   ├── test_endpoint.sh      # Test a live RunPod endpoint
+│   └── test_local.sh         # Test locally against running rvllm
 ├── scripts/
 │   ├── build.sh              # Docker build script
 │   └── smoke_test.sh
