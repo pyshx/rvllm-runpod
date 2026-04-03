@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any, AsyncGenerator
 
 import httpx
 
 from config import ServerlessConfig
 from request_mapping import ProxyRequest, rewrite_request_model, rewrite_response_models
+
+log = logging.getLogger(__name__)
 
 
 class RvllmProxy:
@@ -54,7 +57,11 @@ class RvllmProxy:
                 data = line[5:].strip()
                 if data == "[DONE]":
                     return
-                payload = json.loads(data)
+                try:
+                    payload = json.loads(data)
+                except json.JSONDecodeError:
+                    log.warning("skipping malformed SSE chunk: %s", data[:120])
+                    continue
                 yield rewrite_response_models(
                     payload,
                     self.config.served_model_name,

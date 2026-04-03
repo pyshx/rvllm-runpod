@@ -5,4 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${REPO_DIR}"
-python3 -m unittest discover -s tests -v
+
+if [[ -f .venv/bin/python ]]; then
+  .venv/bin/python -m pytest tests/ -v "$@"
+else
+  python3 -m pytest tests/ -v "$@"
+fi
