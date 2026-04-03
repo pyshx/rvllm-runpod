@@ -1,0 +1,121 @@
+{
+  "title": "rvLLM Serverless",
+  "description": "RunPod Serverless wrapper around rvLLM (pyshx fork) with dynamic MODEL_ID or baked-image deployment",
+  "type": "serverless",
+  "category": "language",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 150,
+    "gpuIds": "ADA_80_PRO,AMPERE_80",
+    "gpuCount": 1,
+    "allowedCudaVersions": ["13.0"],
+    "presets": [
+      {
+        "name": "Qwen/Qwen2.5-7B-Instruct",
+        "defaults": {
+          "MODEL_ID": "Qwen/Qwen2.5-7B-Instruct",
+          "DTYPE": "half",
+          "MAX_MODEL_LEN": 8192
+        }
+      }
+    ],
+    "env": [
+      {
+        "key": "MODEL_ID",
+        "input": {
+          "name": "Model",
+          "type": "huggingface",
+          "description": "Public Hugging Face model id. Required for generic images.",
+          "required": false
+        }
+      },
+      {
+        "key": "MODEL_TARGET",
+        "input": {
+          "name": "Model Target",
+          "type": "string",
+          "description": "Actual target passed to rvllm serve. Use /models/default for baked images.",
+          "advanced": true
+        }
+      },
+      {
+        "key": "SERVED_MODEL_NAME",
+        "input": {
+          "name": "Served Model Name",
+          "type": "string",
+          "description": "Public model name exposed to clients.",
+          "advanced": true
+        }
+      },
+      {
+        "key": "TOKENIZER_ID",
+        "input": {
+          "name": "Tokenizer",
+          "type": "string",
+          "description": "Optional tokenizer override.",
+          "advanced": true
+        }
+      },
+      {
+        "key": "HF_TOKEN",
+        "input": {
+          "name": "HF Token",
+          "type": "string",
+          "description": "Hugging Face token for gated or private models.",
+          "advanced": true
+        }
+      },
+      {
+        "key": "DTYPE",
+        "input": {
+          "name": "Data Type",
+          "type": "string",
+          "default": "auto",
+          "options": [
+            { "label": "auto", "value": "auto" },
+            { "label": "half", "value": "half" },
+            { "label": "bfloat16", "value": "bfloat16" },
+            { "label": "float32", "value": "float32" }
+          ],
+          "advanced": true
+        }
+      },
+      {
+        "key": "MAX_MODEL_LEN",
+        "input": {
+          "name": "Max Model Length",
+          "type": "number",
+          "default": 2048,
+          "advanced": true
+        }
+      },
+      {
+        "key": "GPU_MEMORY_UTILIZATION",
+        "input": {
+          "name": "GPU Memory Utilization",
+          "type": "string",
+          "default": "0.9",
+          "advanced": true
+        }
+      },
+      {
+        "key": "TENSOR_PARALLEL_SIZE",
+        "input": {
+          "name": "Tensor Parallel Size",
+          "type": "number",
+          "default": 1,
+          "advanced": true
+        }
+      },
+      {
+        "key": "MAX_NUM_SEQS",
+        "input": {
+          "name": "Max Num Seqs",
+          "type": "number",
+          "default": 256,
+          "advanced": true
+        }
+      }
+    ]
+  }
+}
