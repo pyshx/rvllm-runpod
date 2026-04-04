@@ -9,7 +9,7 @@ COPY rvllm /build/rvllm
 RUN bash kernels/build.sh
 RUN cargo build --release -p rvllm --features rvllm/cuda
 
-FROM nvidia/cuda:13.0.1-runtime-ubuntu24.04 AS runtime
+FROM nvidia/cuda:13.0.1-devel-ubuntu24.04 AS runtime
 
 RUN apt-get update && apt-get install -y \
     python3 \
