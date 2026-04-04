@@ -17,7 +17,11 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     libssl3t64 \
     ca-certificates \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# CUTLASS headers required for JIT compilation of fused kernels (CuTE)
+RUN git clone --depth 1 --branch v3.7.0 https://github.com/NVIDIA/cutlass.git /root/cutlass
 
 COPY rvllm-runpod/builder/requirements.txt /tmp/requirements.txt
 RUN python3 -m venv /opt/venv && \
