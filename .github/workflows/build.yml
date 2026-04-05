@@ -49,5 +49,4 @@ jobs:
           tags: |
             ghcr.io/pyshx/rvllm-runpod:latest
             ghcr.io/pyshx/rvllm-runpod:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true
