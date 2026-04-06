@@ -2,6 +2,27 @@
 
 RunPod Serverless wrapper for [`rvLLM`](https://github.com/pyshx/rvllm). Launches the Rust inference server as a subprocess and proxies RunPod jobs to its OpenAI-compatible API.
 
+## Quick Start
+
+```bash
+# 1. Set your RunPod API key
+export RUNPOD_API_KEY=rpa_xxxxx
+
+# 2. Deploy (creates template + endpoint, scales to zero when idle)
+make deploy MODEL_ID=Qwen/Qwen2.5-7B-Instruct
+
+# 3. Chat (first request triggers cold start ~2 min)
+make chat MSG="What is the capital of Japan?"
+
+# 4. Check status
+make status
+
+# 5. Stop (scale to zero)
+make stop
+```
+
+That's it. The endpoint scales to zero when idle — you only pay during inference.
+
 ## Architecture
 
 ```
@@ -16,45 +37,56 @@ The wrapper does three things:
 
 No inference logic lives here — that stays in rvLLM.
 
-## Quick Start
+## Deploy Options
 
-### Generic Image (model downloaded at runtime)
+### Option 1: Use the pre-built image (recommended)
+
+The CI publishes `ghcr.io/pyshx/rvllm-runpod:latest`. The deploy script uses this by default:
 
 ```bash
-./scripts/build.sh --tag pyshx/rvllm-runpod:latest --push
+make deploy MODEL_ID=Qwen/Qwen2.5-7B-Instruct
 ```
 
-### Baked Image (model inside the image)
+### Option 2: Build your own image
 
 ```bash
+# Generic (model downloaded at runtime)
+./scripts/build.sh --tag myregistry/rvllm-runpod:latest --push
+
+# Baked (model inside the image — faster cold starts)
 HF_TOKEN=hf_xxx ./scripts/build.sh \
-  --tag pyshx/rvllm-runpod:qwen25-7b \
+  --tag myregistry/rvllm-runpod:qwen25-7b \
   --bake-model \
   --model-id Qwen/Qwen2.5-7B-Instruct \
   --push
+
+# Deploy with custom image
+make deploy MODEL_ID=Qwen/Qwen2.5-7B-Instruct IMAGE=myregistry/rvllm-runpod:latest
 ```
 
-### Deploy on RunPod
+## Make Targets
 
-1. Create a **Custom deployment** > **Deploy from Docker registry**
-2. Use your image tag
-3. Set endpoint type to **Queue-based**
-4. Add env vars:
-
-```env
-MODEL_ID=Qwen/Qwen2.5-7B-Instruct
-DTYPE=half
-MAX_MODEL_LEN=4096
-GPU_MEMORY_UTILIZATION=0.80
-MAX_NUM_SEQS=16
-MAX_CONCURRENCY=4
 ```
-
-For gated/private models, add `HF_TOKEN` as a RunPod Secret.
+make help       Show all targets
+make test       Run unit tests (93 tests)
+make build      Build Docker image locally
+make deploy     Deploy to RunPod (creates template + endpoint)
+make status     Check endpoint health
+make chat       Send a chat message (MSG="hello")
+make start      Scale endpoint to 1 worker
+make stop       Scale endpoint to 0 workers
+make logs       Open RunPod logs in browser
+```
 
 ## Usage
 
-### Chat Completion
+### Via make
+
+```bash
+make chat MSG="Write a Python function that checks if a number is prime"
+```
+
+### Via curl
 
 ```bash
 curl -X POST "https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync" \
@@ -62,53 +94,17 @@ curl -X POST "https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync" \
   -H "content-type: application/json" \
   -d '{
     "input": {
-      "messages": [
-        {"role": "user", "content": "What is rvLLM?"}
-      ],
-      "temperature": 0.2,
+      "messages": [{"role": "user", "content": "Hello"}],
+      "temperature": 0,
       "max_tokens": 128
     }
   }'
 ```
 
-### Streaming
+### Via test scripts
 
 ```bash
-curl -X POST "https://api.runpod.ai/v2/<ENDPOINT_ID>/run" \
-  -H "authorization: <RUNPOD_API_KEY>" \
-  -H "content-type: application/json" \
-  -d '{
-    "input": {
-      "messages": [{"role": "user", "content": "Hello"}],
-      "stream": true,
-      "max_tokens": 128
-    }
-  }'
-```
-
-Then poll the stream:
-
-```bash
-curl "https://api.runpod.ai/v2/<ENDPOINT_ID>/stream/<JOB_ID>" \
-  -H "authorization: <RUNPOD_API_KEY>"
-```
-
-### Explicit Proxy Input
-
-For direct control over the local endpoint:
-
-```json
-{
-  "input": {
-    "path": "/v1/chat/completions",
-    "method": "POST",
-    "body": {
-      "model": "Qwen/Qwen2.5-7B-Instruct",
-      "messages": [{"role": "user", "content": "Hello"}],
-      "stream": true
-    }
-  }
-}
+RUNPOD_API_KEY=xxx ENDPOINT_ID=yyy ./examples/test_endpoint.sh all
 ```
 
 ## Configuration
@@ -120,7 +116,6 @@ For direct control over the local endpoint:
 | `MODEL_ID` | - | Hugging Face model id |
 | `MODEL_TARGET` | - | Override: actual value passed to `rvllm serve --model` |
 | `SERVED_MODEL_NAME` | `MODEL_ID` | Public model name exposed to clients |
-| `TOKENIZER_ID` | - | Optional tokenizer override |
 | `HF_TOKEN` | - | For gated/private models |
 | `MAX_CONCURRENCY` | `30` | RunPod worker concurrency |
 | `SERVER_READY_TIMEOUT` | `900` | Startup health-check timeout (seconds) |
@@ -136,37 +131,6 @@ For direct control over the local endpoint:
 | `TENSOR_PARALLEL_SIZE` | `1` |
 | `MAX_NUM_SEQS` | `256` |
 | `RUST_LOG` | `info` |
-| `DISABLE_TELEMETRY` | `false` |
-
-## Examples
-
-Test inputs live in `examples/`. Each covers a different job format:
-
-| File | What it tests |
-| --- | --- |
-| `test_input.json` | Chat completion (non-streaming) |
-| `test_input_stream.json` | Chat completion (streaming) |
-| `test_input_completion.json` | Text completion |
-| `test_input_models.json` | List models |
-| `test_input_explicit.json` | Explicit proxy (path + method + body) |
-
-### Test a live RunPod endpoint
-
-```bash
-RUNPOD_API_KEY=xxx ENDPOINT_ID=yyy ./examples/test_endpoint.sh          # chat
-RUNPOD_API_KEY=xxx ENDPOINT_ID=yyy ./examples/test_endpoint.sh stream   # streaming
-RUNPOD_API_KEY=xxx ENDPOINT_ID=yyy ./examples/test_endpoint.sh all      # everything
-```
-
-### Test locally (against a running rvllm)
-
-```bash
-# Terminal 1: start rvllm
-rvllm serve --model Qwen/Qwen2.5-7B-Instruct --port 8000
-
-# Terminal 2: run the handler
-MODEL_ID=Qwen/Qwen2.5-7B-Instruct ./examples/test_local.sh
-```
 
 ## Development
 
@@ -175,21 +139,9 @@ git clone https://github.com/pyshx/rvllm
 git clone https://github.com/pyshx/rvllm-runpod
 
 cd rvllm-runpod
+cp .env.example .env  # add your RUNPOD_API_KEY
 uv venv && uv pip install -e ".[dev]"
-```
-
-### Run Tests
-
-```bash
-./scripts/smoke_test.sh
-```
-
-93 tests covering config, request mapping, proxy (streaming + non-streaming), and server launcher.
-
-### Dry Run Build
-
-```bash
-./scripts/build.sh --tag test:latest --dry-run
+make test
 ```
 
 ## Layout
@@ -201,25 +153,18 @@ rvllm-runpod/
 │   ├── download_model.py     # HF model downloader for baked images
 │   └── requirements.txt
 ├── examples/
-│   ├── test_input.json       # Chat completion
-│   ├── test_input_stream.json
-│   ├── test_input_completion.json
-│   ├── test_input_models.json
-│   ├── test_input_explicit.json
-│   ├── test_endpoint.sh      # Test a live RunPod endpoint
+│   ├── test_input*.json      # Sample job inputs
+│   ├── test_endpoint.sh      # Test a live endpoint
 │   └── test_local.sh         # Test locally against running rvllm
 ├── scripts/
-│   ├── build.sh              # Docker build script
-│   └── smoke_test.sh
+│   ├── build.sh              # Docker build
+│   ├── deploy.sh             # RunPod deploy (template + endpoint)
+│   └── smoke_test.sh         # Run tests
 ├── src/
 │   ├── config.py             # Env-driven configuration
 │   ├── handler.py            # RunPod serverless entry point
 │   ├── proxy.py              # HTTP proxy to rvllm serve
 │   ├── request_mapping.py    # Job input -> OpenAI API mapping
 │   └── server_launcher.py    # rvllm process lifecycle
-└── tests/
-    ├── test_config.py
-    ├── test_proxy.py
-    ├── test_request_mapping.py
-    └── test_server_launcher.py
+└── tests/                    # 93 tests
 ```

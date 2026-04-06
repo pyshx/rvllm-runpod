@@ -4,3 +4,5 @@ __pycache__/
 .build/
 *.pyc
 *.egg-info/
+.env
+.endpoint
